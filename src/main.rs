@@ -41,8 +41,7 @@ fn interpret_single(float: u32) -> f32 {
 
 	if characteristic == 0 {
 		if mantissa != 0 {
-			eprintln!("can't process denormalized floats (yet)");
-			return 0.0;
+			// denormalized value, handled below
 		} else {
 			return sign * 0.0;
 		}
@@ -54,24 +53,30 @@ fn interpret_single(float: u32) -> f32 {
 		}
 	}
 
-	let mut power = 2.0f32.powi(characteristic as i32 - 127);
-	let mut value = sign * power;
+	let mut power = if characteristic != 0 { 2.0f32.powi(characteristic as i32 - 127) } else { 2.0f32.powi(-126) };
+	let mut value = if characteristic != 0 { power } else { 0.0 };
 	for idx in 0..23 {
 		let digit = (mantissa >> (22 - idx)) & 1;
 		power /= 2.0;
 		if digit == 1 {
-			value += sign * power;
+			value += power;
 		}
 	}
-	value
+	value.copysign(sign)
 }
 
 #[test]
 fn interpret_single_test() {
 	let tests = [
 		(0b1100_0000_1110_1000_0000_0000_0000_0000, -7.25),
-		(0b1011_1111_0101_0000_0000_0000_0000_0000, -0.8125)
+		(0b1011_1111_0101_0000_0000_0000_0000_0000, -0.8125),
+		// denormalized float
+		(0b0000_0000_0100_0000_0000_0000_0000_0000, 0.000000000000000000000000000000000000005877472),
 	];
+	// some sanity checks around subnormals
+	assert_eq!(2.0f32.powi(-127), tests[2].1);
+	assert_ne!(tests[2].1 / 2.0, 0.0);
+	assert_eq!(2.0f32.powi(-127) / 2.0, tests[2].1 / 2.0);
 	for test in &tests {
 		assert_eq!(interpret_single(test.0), test.1);
 	}
