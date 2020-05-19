@@ -81,3 +81,25 @@ fn interpret_single_test() {
 		assert_eq!(interpret_single(test.0), test.1);
 	}
 }
+
+#[test]
+#[ignore]
+fn interpret_exhaustive_test() {
+	let mut any_fail = false;
+	for value in 0..=u32::MAX {
+		let expected = f32::from_bits(value);
+		let actual = interpret_single(value);
+		if expected.is_nan() {
+			if !actual.is_nan() {
+				eprintln!("value {:032b} expected {:?} actual {:?}", value, expected, actual);
+				any_fail = true;
+			}
+		} else {
+			if actual != expected {
+				eprintln!("value {:032b} expected {:?} actual {:?}", value, expected, actual);
+				any_fail = true;
+			}
+		}
+	}
+	assert!(!any_fail);
+}
