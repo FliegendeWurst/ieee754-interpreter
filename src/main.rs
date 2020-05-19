@@ -49,7 +49,7 @@ fn interpret_single(float: u32) -> f32 {
 		if mantissa != 0 {
 			return f32::NAN;
 		} else {
-			return sign * f32::INFINITY;
+			return f32::INFINITY.copysign(sign);
 		}
 	}
 
@@ -72,6 +72,8 @@ fn interpret_single_test() {
 		(0b1011_1111_0101_0000_0000_0000_0000_0000, -0.8125),
 		// denormalized float
 		(0b0000_0000_0100_0000_0000_0000_0000_0000, 0.000000000000000000000000000000000000005877472),
+		// positive infinity
+		(0b0_1111_1111_00000000000000000000000, f32::INFINITY),
 	];
 	// some sanity checks around subnormals
 	assert_eq!(2.0f32.powi(-127), tests[2].1);
